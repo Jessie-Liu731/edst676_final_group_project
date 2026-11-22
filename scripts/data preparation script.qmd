@@ -16,6 +16,7 @@ library(janitor)
 library(dplyr)
 library(stringr)
 library(tidyr)
+library(ggplot2)
 ```
 
 ```{r read in data, echo=FALSE}
@@ -89,3 +90,43 @@ summary(complete_data |> select(life_sat, resilience, loneliness))
 ```
 
 To facilitate subsequent analyses, we computed three composite scores: life satisfaction, resilience, and loneliness. Also, we reverse-coded three negatively worded items in resilience before summation.
+
+### Data visualizations
+
+1.  Resilience scores
+
+```{r, echo=FALSE}
+#Distribution in general
+ggplot(complete_data, aes(x=resilience))+
+  geom_bar(
+    width = 1,
+    fill = "lightblue"
+  )+
+  labs(
+    title="Distribution of Resilience Scores",
+    x="Resilience Score",
+    y="Frequency"
+  )+
+  theme_minimal()
+
+#Resilience by sex
+ggplot(complete_data, aes(x=sex_label, y=resilience))+
+  geom_boxplot(fill = "lightblue")+
+  labs(
+    title = "Resilience by Sex",
+    x="Sex",
+    y="Resilience Score"
+  )+
+  theme_minimal()
+  
+#Resilience by Race/ethnicity
+ggplot(complete_data, aes(x=racerec_label, y=resilience))+
+  geom_boxplot(fill = "lightblue")+
+  coord_flip()+
+  labs(
+    title = "Resilience by Race/Ethnicity",
+    x = "Race/Ethnicity",
+    y = "Reslience Score"
+  )+
+  theme_minimal()
+```
