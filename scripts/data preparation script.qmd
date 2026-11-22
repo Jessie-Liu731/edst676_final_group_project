@@ -7,12 +7,15 @@ format:
 embed_resources: true
 ---
 
+## Data Preparation
+
 ```{r load library, include=FALSE, message=FALSE, warning=FALSE}
 library(here)
 library(rio)
 library(janitor)
 library(dplyr)
 library(stringr)
+library(tidyr)
 ```
 
 ```{r read in data, echo=FALSE}
@@ -34,4 +37,55 @@ data <- data_raw |>
   select(c(age,sex_code:metstat_self_label,lad_now, lad_fut, happy_code:intendvote_2024_label))
 ```
 
+### Data Cleaning
 
+1.  Remove observations with non-valid responses
+
+```{r, include=FALSE, echo=FALSE}
+#examine unique values and response frequencies
+lapply(data |> select(ends_with("_code")), unique)
+lapply(data |> select(ends_with("_code")), table, useNA="ifany")
+summary(data |> select(age, lad_now, lad_fut))
+sum(is.na(data |> select(age, lad_now, lad_fut)))
+table(data$lad_now, useNA = "ifany")
+
+#Recode missing values
+nonmissing_data <- data |> 
+  mutate(
+    across(ends_with("_code"), ~ replace(.x, .x %in% c(98,99), NA_integer_)),
+    lad_now = na_if(lad_now, 99)
+  )
+
+#check missing value recoding
+colSums(is.na(nonmissing_data))
+lapply(nonmissing_data |> select(ends_with("_code")), table, useNA="ifany")
+summary(nonmissing_data |> select(age, lad_now, lad_fut))
+
+#Remove observations with missing values
+complete_data <- nonmissing_data |> 
+  drop_na(ends_with("_code"), lad_now, lad_fut, age)
+```
+
+After recoding non-substantive responses as mssing values, we excluded participants with missing on any of the selected variables. A totoal of `r nrow(nonmissing_data)-nrow(complete_data)` observations with missing values were removed, resulting in a final sample of `r nrow(complete_data)` observations.
+
+2.  compute composite scores
+
+```{r, include=FALSE, echo=FALSE}
+complete_data <- complete_data |> 
+  mutate(
+    #life satisfaction (5-25)
+    life_sat = sat1_code + sat2_code +sat3_code+sat4_code+sat5_code,
+    #reverse-code negatively worded resilience items
+    res2_rev = 6- res2_code,
+    res4_rev = 6- res4_code,
+    res6_rev = 6- res6_code,
+    #resilience (6-30)
+    resilience=res1_code+res2_rev+res3_code+res4_rev+res5_code+res6_rev,
+    #loneliness(3-9)
+    loneliness=lonely_a_code+lonely_b_code+lonely_c_code
+  )
+#check sum scores
+summary(complete_data |> select(life_sat, resilience, loneliness))
+```
+
+To facilitate subsequent analyses, we computed three composite scores: life satisfaction, resilience, and loneliness. Also, we reverse-coded three negatively worded items in resilience before summation.
