@@ -1,0 +1,24 @@
+library(here)
+library(rio)
+library(janitor)
+library(dplyr)
+library(stringr)
+
+###read in the approved data subset
+data_raw <- import(here("data","NWS24_subset_edst676.csv")) |> 
+  clean_names()
+
+###pre-processing
+pattern <- "^\\s*\\((\\d+)\\)\\s*"
+
+data <- data_raw |>
+  mutate(across(-c(age,lad_now,lad_fut),
+    list(
+      code  = ~ as.integer(str_match(as.character(.x), pattern)[, 2]),
+      label = ~ str_remove(as.character(.x), pattern)
+    ),
+    .names = "{.col}_{.fn}"
+  )) |>
+  select(c(age,sex_code:metstat_self_label,lad_now, lad_fut, happy_code:intendvote_2024_label))
+
+
