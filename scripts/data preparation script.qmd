@@ -157,4 +157,29 @@ ggplot(complete_data, aes(x=racerec_label, y=resilience))+
 
 
 
+3. Wellbeing and Education
 
+##### Descriptive Summary of Wellbeing Variables by Education Level
+
+```{r, echo=FALSE}
+educ_order <- c(
+  "Did not complete high school",
+  "High school diplomma or GED",
+  "Attended college but did not complete a degree",
+  "Associate degree",
+  "Bachelor's degree",
+  "Post-Bachelor's degree (e.g., Masters, Doctorate, MD, JD)"
+)
+
+complete_data |>
+  group_by(educ_label) |>
+  summarize(
+    life_sat = mean(life_sat, na.rm = TRUE), 
+    resilience = mean(resilience, na.rm = TRUE), 
+    loneliness = mean(loneliness, na.rm = TRUE), 
+    lad_change = mean(lad_change, na.rm = TRUE), 
+    child_better = mean(child_better, na.rm = TRUE)
+    ) |>
+  arrange(match(educ_label, educ_order)) |>
+  kable(digits = 2)
+```
