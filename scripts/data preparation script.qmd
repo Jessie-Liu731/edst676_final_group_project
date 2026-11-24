@@ -17,6 +17,7 @@ library(dplyr)
 library(stringr)
 library(tidyr)
 library(ggplot2)
+library(knitr)
 ```
 
 ```{r read in data, echo=FALSE}
@@ -35,7 +36,9 @@ data <- data_raw |>
     ),
     .names = "{.col}_{.fn}"
   )) |>
-  select(c(age,sex_code:metstat_self_label,lad_now, lad_fut, happy_code:intendvote_2024_label))
+  select(c(age,sex_code:metstat_self_label,lad_now, lad_fut, happy_code:intendvote_2024_label)) |>
+  mutate(id = row_number()) |>
+  relocate(id, .before = age) 
 ```
 
 ### Data Cleaning
@@ -91,6 +94,26 @@ summary(complete_data |> select(life_sat, resilience, loneliness))
 
 To facilitate subsequent analyses, we computed three composite scores: life satisfaction, resilience, and loneliness. Also, we reverse-coded three negatively worded items in resilience before summation.
 
+3.  measure future prospects
+
+```{r, include=FALSE, echo=FALSE}
+
+complete_data <- complete_data |> 
+  mutate(
+    lad_change = lad_fut - lad_now,
+    child_better = case_when(
+      child_better_code == 1:2 ~ 1,
+      child_better_code == 3:4 ~ 0
+      )
+    )
+
+#check sum positivism measures
+summary(complete_data |> select(lad_change, child_better))
+```
+
+To facilitate subsequent analyses, we also construct two variables to measure positivism towards the future for personal life and societal development, respectively. The `lad_change` is a continuous variable that measures participant's own estimation of change in their personal life from now to 5 years later. The range of value is from `r min(complete_data$lad_change, na.rm = TRUE)` to `r max(complete_data$lad_change, na.rm = TRUE)` and the higher the value, the more positive the participant's outlook on their future.  The `child_better` is a binary variable that indicates whether the respondent thinks the next generation will have a better life than the current one. The range of value is 0 and 1, with 1 indicating a positive outlook on the next generation's life.
+
+
 ### Data visualizations
 
 1.  Resilience scores
@@ -130,3 +153,8 @@ ggplot(complete_data, aes(x=racerec_label, y=resilience))+
   )+
   theme_minimal()
 ```
+
+
+
+
+
