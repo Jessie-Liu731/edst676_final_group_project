@@ -155,9 +155,7 @@ ggplot(complete_data, aes(x=racerec_label, y=resilience))+
 ```
 
 
-
-
-3. Wellbeing and Education
+2. Wellbeing and Education
 
 ##### Descriptive Summary of Wellbeing Variables by Education Level
 
@@ -183,3 +181,132 @@ complete_data |>
   arrange(match(educ_label, educ_order)) |>
   kable(digits = 2)
 ```
+
+
+3.  Wellbeing, Political Beliefs and Behaviors
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+###create variable for voting behavior & intention
+complete_data <- complete_data |>
+  mutate(
+    voting_2020 = ifelse(vote_2020_code == "4", 0, 1),
+    voting_2024 = ifelse(intendvote_2024_code == "4", 0, 1)
+    ) 
+
+voting_data <- complete_data |>
+  select(id, age, sex_label, racerec_label, educ_label, lad_now, lad_fut, child_better_code, lad_change, child_better, life_sat, resilience, loneliness, pol_party_label, pol_ideology_label, voting_2020, voting_2024) |>
+  pivot_longer(
+    cols = c(voting_2020, voting_2024), 
+    names_to = "year",
+    names_prefix = "voting_",
+    values_to = "voting")
+
+party_order <- c(
+  "Democrat",
+  "Republican",
+  "Other",
+  "Independent",
+  "No affiliation/ None"
+)
+
+voting_party_summary <- voting_data |>
+  group_by(year, pol_party_label) |>
+  summarise(voting = mean(voting, na.rm = TRUE))
+
+voting_party_summary |>
+  arrange(match(pol_party_label, party_order)) |>
+  kable(digits = 2)
+
+ideol_order <- c(
+  "Very liberal",
+  "Very conservative",
+  "Somewhat liberal",
+  "Somewhat conservative",
+  "Moderate"
+)
+
+voting_ideol_summary <- voting_data |>
+  group_by(year, pol_ideology_label) |>
+  summarise(voting = mean(voting, na.rm = TRUE))
+
+voting_ideol_summary |>
+  arrange(match(pol_ideology_label, ideol_order)) |>
+  kable(digits = 2)
+
+
+#use facet_wrap to visualize the relationship between well-being and voting intention by political party affiliation
+
+voting_data |>
+  filter(year == "2024") |>
+  ggplot(aes(x = life_sat, y = voting)) +
+  geom_point(color = "lightblue", 
+             alpha = 0.5) +
+  geom_smooth(method = "lm",
+              se = FALSE,
+              color = "blue") +
+  facet_wrap(~ pol_party_label) +
+  labs(
+    title = "Relationship between Life Satisfaction and Voting Intention by Political Party Affiliation",
+    x = "Life Satisfaction (life_sat)",
+    y = "Voting Intention (0=No, 1=Yes)"
+  ) +
+  theme_minimal() 
+
+
+voting_data |>
+  filter(year == "2024") |>
+  ggplot(aes(x = lad_change, y = voting)) +
+  geom_point(color = "lightblue", 
+             alpha = 0.5) +
+  geom_smooth(method = "lm",
+              se = FALSE,
+              color = "blue") +
+  facet_wrap(~ pol_party_label) +
+  labs(
+    title = "Relationship between Personal Life Prospects and Voting Intention by Political Party Affiliation",
+    x = "Personal Life Prospects (lad_change)",
+    y = "Voting Intention (0=No, 1=Yes)"
+  ) +
+  theme_minimal()
+
+
+#filter out participants who voted in 2020 and do or do not intend to vote in 2024, and summarize their well-being scores for comparison
+
+voting_data |>
+  pivot_wider(
+    names_from = year,
+    values_from = voting,
+    names_prefix = "voting_"
+  ) |>
+  filter(voting_2020 == 1, voting_2024 == 1) |>
+  summarize(
+    n = n(),
+    life_sat = mean(life_sat, na.rm = TRUE),
+    loneliness = mean(loneliness, na.rm = TRUE),
+    resilience = mean(resilience, na.rm = TRUE),
+    lad_change = mean(lad_change, na.rm = TRUE),
+    child_better = mean(child_better, na.rm = TRUE)
+  ) |>
+  kable(digits = 2)
+
+
+voting_data |>
+  pivot_wider(
+    names_from = year,
+    values_from = voting,
+    names_prefix = "voting_"
+  ) |>
+  filter(voting_2020 == 1, voting_2024 == 0) |>
+  summarize(
+    n = n(),
+    life_sat = mean(life_sat, na.rm = TRUE),
+    loneliness = mean(loneliness, na.rm = TRUE),
+    resilience = mean(resilience, na.rm = TRUE),
+    lad_change = mean(lad_change, na.rm = TRUE),
+    child_better = mean(child_better, na.rm = TRUE)
+  ) |>
+  kable(digits = 2)
+
+```
+
+
